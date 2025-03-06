@@ -3,6 +3,7 @@ console.log("Spotify Clone Back-end");
 // Импорт необходимых модулей
 import cors from 'cors'; // Модуль для обработки CORS (Cross-Origin Resource Sharing)
 import multer from 'multer'; // Модуль для обработки загрузки файлов
+import path from 'path';
 import express from 'express'; // Фреймворк для создания сервера
 import jwt from 'jsonwebtoken'; // Модуль для работы с JWT (JSON Web Tokens)
 import mongoose from 'mongoose'; // Модуль для работы с MongoDB
@@ -14,10 +15,11 @@ import UserModel from './models/user.js'; // Модель пользовател
 import {uc} from './control/index.js'; // Импорт контроллеров
 import checkAuth from './utils/checkAuth.js'; // Мидлвар для проверки авторизации
 import { register } from './control/control.js'; // Функция регистрации
+import {fileFilter, getAudio} from "./control/AudioService.js"; // импорт функции с AudioService
 
 // Подключение к MongoDB с использованием mongoose
 mongoose
- .connect('API_KEY')
+ .connect('mongo-url')
  .then(()=>{console.log("Статус базы данных --- OK")}) // Если подключение успешно, выводим сообщение "DataBase --- OK"
  .catch((err)=>{console.log("Статус базы данных --- ERROR" , err)}); // Если произошла ошибка, выводим сообщение "DataBase --- ERROR" и саму ошибку
 
@@ -42,19 +44,39 @@ app.use(cors()); // Включает CORS для всех маршрутов
 app.use('/uploads', express.static('uploads'));
 
 // Инициализация multer с настройками хранилища
-const upload = multer({ storage: storage });
+const upload = multer({ storage: storage, fileFilter });
 
-// Маршрут для загрузки файлов
-app.post('/upload', upload.single('music'), (req, res) => {
-    // Возвращаем URL загруженного файла в ответе
-    res.json({
-        url: `/uploads/${req.file.originalname}`,
-    });
+// Маршрут для загрузки файлов !-!-! (поменял маршрут с /upload на /audio/upload) !-!-!
+app.post('/audio/upload', upload.single('music'), (req, res) => {
+
+    return res.json({
+        url: `/uploads/${req.file.filename}`,
+        info: req.file
+    })
+})
+
+// Ловим и выводим ошибки от мультера
+app.use((err, req, res, next) => {
+
+    if (err instanceof multer.MulterError) {
+        return res.status(400).json({ message: err.message })
+    }
+    else if (err) {
+        return res.status(400).json({ message: err.message })
+    }
+
+    next()
 });
+
+// Маршрут для получения данных об аудиофайле
+app.get("/audio/get/:songName", getAudio)
 
 // Маршруты для аутентификации
 app.post('/auth/login', loginValidation, uc.login); // Маршрут для входа
 app.post('/auth/register', registerValidator, uc.register); // Маршрут для регистрации
+
+// Маршрут для получения данных о пользователе
+app.get("/user/me", /*решил не вставлять валидации никакие*/ uc.getMe)
 
 // Запуск сервера на порту 4000
 app.listen(4000, (err) => {
