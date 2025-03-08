@@ -5,6 +5,7 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/DKhorov/Back-end-SpotiyClone?style=flat-square)
 ![GitHub repo size](https://img.shields.io/github/repo-size/DKhorov/Back-end-SpotiyClone?style=flat-square)
 ![GitHub issues](https://img.shields.io/github/issues/DKhorov/Back-end-SpotiyClone?style=flat-square)
+![SpotifyClone pet Community Project](https://img.shields.io/badge/SpotifyClone-pet-Community-Project-blue)
 
 ---
 
