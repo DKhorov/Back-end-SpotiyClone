@@ -1,24 +1,15 @@
 // Импорт модуля express для создания сервера
 
-// Импорт модуля jsonwebtoken для работы с JWT (JSON Web Tokens)
-import jwt from "jsonwebtoken";
 
 // Импорт модуля bcrypt для хеширования паролей
 import bcrypt from "bcrypt";
 
-// Импорт кастомного валидатора для регистрации
-import { registerValidator } from "../validations/auth.js";
-
-// Импорт функции validationResult из express-validator для обработки ошибок валидации
-import { validationResult } from "express-validator";
-
-// Импорт модели пользователя из файла user.js
-import UserModel from "../models/user.js";
-import checkAuth from "../utils/checkAuth.js";
 
 import UserService from "../services/userService.js";
 import UserError from "../errors/userError.js";
 import emailService from '../services/emailService.js';
+import TokenService from "../services/tokenService.js"  
+const tokenService = TokenService;
 
 const userService = new UserService();
 
@@ -42,15 +33,9 @@ export const login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        _id: user._id, // Использование ID пользователя в качестве payload
-      },
-      "secret123", // Секретный ключ для подписи токена
-      {
-        expiresIn: "30d", // Срок действия токена - 30 дней
-      }
-    );
+    const token = tokenService.generateAccessToken({
+      id: user.id, // Использование ID пользователя в качестве payload
+    });
 
     // Exclude passwordHash from the user data
     const { passwordHash, ...userData } = user;
@@ -106,15 +91,9 @@ export const register = async (req, res) => {
     });
 
     // Генерируем JWT токен
-    const token = jwt.sign(
-      {
-        _id: user.id,
-      },
-      process.env.JWT_SECRET || "secret123",
-      {
-        expiresIn: process.env.JWT_EXPIRES_IN || "30d",
-      }
-    );
+    const token = tokenService.generateAccessToken({
+      id: user.id, // Использование ID пользователя в качестве payload
+    });
 
     // Возвращаем ответ
     return res.json({
@@ -161,15 +140,9 @@ export const getMe = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      {
-        _id: user._id, // Использование ID пользователя в качестве payload
-      },
-      "secret123", // Секретный ключ для подписи токена
-      {
-        expiresIn: "30d", // Срок действия токена - 30 дней
-      }
-    );
+    const token = tokenService.generateAccessToken({
+      id: user.id, // Использование ID пользователя в качестве payload
+    });
 
     const { fullName, email } = user;
 
@@ -259,8 +232,8 @@ export const forgotPassword = async (req, res) => {
 
     // Отправляем email с ссылкой для сброса пароля
     const emailSent = await emailService.sendPasswordResetEmail(
-      resetData.email, 
-      resetData.resetToken, 
+      resetData.email,
+      resetData.resetToken,
       resetData.fullName
     );
 
@@ -286,7 +259,7 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { token, code, password, email } = req.body;
-    
+
     // Проверяем, что токен и код указаны
     if (!token || !code || !email) {
       return res.status(400).json({
@@ -294,7 +267,7 @@ export const resetPassword = async (req, res) => {
         message: "Необходимо указать токен, код и email для сброса пароля"
       });
     }
-    
+
     // Проверяем код и email
     const isCodeValid = emailService.verifyResetCode(code, email);
     if (!isCodeValid) {
@@ -303,7 +276,7 @@ export const resetPassword = async (req, res) => {
         message: "Недействительный или устаревший код подтверждения"
       });
     }
-    
+
     // Сбрасываем пароль
     const result = await userService.resetPassword(token, password);
 
