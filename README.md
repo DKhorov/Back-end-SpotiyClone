@@ -1,10 +1,10 @@
-# Back-end-SpotiyClone ( ver4.1 )
+# Back-end-SpotiyClone ( ver4.1=5 )
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/DKhorov/Back-end-SpotiyClone?style=flat-square)
 ![GitHub repo size](https://img.shields.io/github/repo-size/DKhorov/Back-end-SpotiyClone?style=flat-square)
 ![GitHub issues](https://img.shields.io/github/issues/DKhorov/Back-end-SpotiyClone?style=flat-square)
 ![SpotifyClone pet Community Project](https://img.shields.io/badge/SpotifyClone-pet-blue)
-![SpotifyClone pet Community Project](https://img.shields.io/badge/Version-4.1-red)
+![SpotifyClone pet Community Project](https://img.shields.io/badge/Version-4.5-red)
 
 
 ---
