@@ -1,11 +1,12 @@
-import jwt from 'jsonwebtoken'
+import TokenService from "../services/tokenService.js"  
+const tokenService = TokenService;
 
 export default ( req,res, next)=>{
     const token = (req.headers.authorization || '').replace(/Bearer\s?/,'');
     console.log(token);
     if (token){
         try{
-            const decoded = jwt.verify(token,'secret123');
+            const decoded = tokenService.verifyToken(token);
             req.userId = decoded._id;
             next();
 
