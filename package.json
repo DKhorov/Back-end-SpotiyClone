@@ -25,6 +25,7 @@
     "music-metadata": "^11.0.0",
     "node-id3": "^0.2.8",
     "nodemon": "^3.1.9",
+    "pg": "^8.13.3",
     "sqlite3": "^5.1.7",
     "xss-clean": "^0.1.4"
   }

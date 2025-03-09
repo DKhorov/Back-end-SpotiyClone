@@ -30,11 +30,13 @@ export const login = async (req, res) => {
         message: "Пользователь не найден",
       });
     }
-
+    console.log(req.body)
+    console.log(user)
     const isValidPass = await bcrypt.compare(
       req.body.password,
       user.passwordHash
     );
+    console.log(isValidPass)
     if (!isValidPass) {
       return res.status(404).json({
         message: "Password не найден",
@@ -123,7 +125,7 @@ export const register = async (req, res) => {
       });
     }
     return res.status(500).json({
-      message: "Sorry! You not is goodman :( Please register again",
+      message: "Sorry! You not is goodman :( Please register again", 
     });
   }
 };

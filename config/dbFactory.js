@@ -1,39 +1,32 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import mongoose from 'mongoose';
-
-import sqlite3Module from 'sqlite3';
-const sqlite3 = sqlite3Module.verbose();
-import SQliteUserRepository from "../repositories/sqlite/userRepository.js";
-import MongoUserRepository from "../repositories/mongodb/userRepository.js";
+import pkg from "pg";
+const { Pool } = pkg;
+import PostgresUserRepository from "../repositories/postgres/userRepository.js";
 
 class DBFactory {
   constructor() {
     this.env = process.env.NODE_ENV || "development";
-    this.db =
-      this.env === "production" ? null : new sqlite3.Database(":memory:");
-    if (this.env === "production") {
-      mongoose
-        .connect(process.env.DB_URL, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
-        })
-        .then(() => {
-          console.log("Подключено к MongoDB");
-        })
-        .catch((err) => {
-          console.error("Ошибка подключения к MongoDB:", err);
-        });
-    }
+    
+    this.pool = new Pool({
+      user: process.env.DB_USER,
+      host: process.env.DB_HOST,
+      database: process.env.DB_NAME,
+      password: process.env.DB_PASSWORD,
+      port: process.env.DB_PORT,
+      ssl: this.env === "production" ? { rejectUnauthorized: false } : false,
+    });
+    console.log(process.env.PSQL_URL)
+    this.pool.connect()
+      .then(() => console.log("Подключено к PostgreSQL"))
+      .catch((err) => console.error("Ошибка подключения к PostgreSQL:", err));
   }
 
   getRepository(entity) {
     switch (entity) {
       case "user":
-        return this.env === "production"
-          ? new MongoUserRepository()
-          : new SQliteUserRepository(this.db);
+        return new PostgresUserRepository(this.pool);
       default:
         throw new Error(`Repository for entity "${entity}" not found`);
     }
