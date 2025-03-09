@@ -1,4 +1,4 @@
-# Back-end-SpotiyClone ( ver4.1=5 )
+# Back-end-SpotiyClone ( ver4.1 )
 
 ![GitHub last commit](https://img.shields.io/github/last-commit/DKhorov/Back-end-SpotiyClone?style=flat-square)
 ![GitHub repo size](https://img.shields.io/github/repo-size/DKhorov/Back-end-SpotiyClone?style=flat-square)
