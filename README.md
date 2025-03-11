@@ -2,7 +2,7 @@
 
 <div align="center">
   
-  <img src="/logo/Clone.png" alt="SpotifyClone Logo" width="250" height="250">
+  <img src="/src/logo/Clone.png" alt="SpotifyClone Logo" width="250" height="250">
   
   [![GitHub last commit](https://img.shields.io/github/last-commit/DKhorov/Back-end-SpotiyClone?style=flat-square)](https://github.com/DKhorov/Back-end-SpotiyClone/commits/main)
   [![GitHub repo size](https://img.shields.io/github/repo-size/DKhorov/Back-end-SpotiyClone?style=flat-square)](https://github.com/DKhorov/Back-end-SpotiyClone)
