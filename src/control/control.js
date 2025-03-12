@@ -22,9 +22,9 @@ import emailService from '../services/emailService.js';
 
 const userService = new UserService();
 
+
 export const login = async (req, res) => {
   try {
-    // const user = await UserModel.findOne({ email: req.body.email });
     const user = await userService.findByEmail(req.body.email);
     if (!user) {
       return res.status(404).json({
@@ -35,36 +35,36 @@ export const login = async (req, res) => {
     const isValidPass = await bcrypt.compare(req.body.password, user.passwordHash);
     if (!isValidPass) {
       return res.status(404).json({
-        message: 'Password не найден',
+        message: 'Неверный пароль',
       });
     }
 
     const token = jwt.sign(
       {
-        _id: user._id, // Использование ID пользователя в качестве payload
+        _id: user._id,
       },
-      'secret123', // Секретный ключ для подписи токена
+      'secret123',
       {
-        expiresIn: '30d', // Срок действия токена - 30 дней
+        expiresIn: '30d',
       },
     );
 
-    // Exclude passwordHash from the user data
-    const { passwordHash, ...userData } = user;
+    // Исключаем passwordHash из данных пользователя
+    const { passwordHash: _, ...userData } = user.toObject();
 
-    // Check if the user is an admin and customize the response
-    if (user.role === 'admin') {
+    // Проверяем, является ли пользователь администратором
+    if (userData.role === 'admin') {
       return res.json({
         message: 'Привет, админ!',
-        user: userData, // Данные пользователя без passwordHash
-        token, // JWT токен
+        user: userData,
+        token,
       });
     }
 
-    // Default response for non-admin users
+    // Ответ для обычных пользователей
     res.json({
-      user: userData, // Данные пользователя без passwordHash
-      token, // JWT токен
+      user: userData,
+      token,
     });
   } catch (err) {
     console.log(err);
@@ -73,8 +73,8 @@ export const login = async (req, res) => {
         message: err.message,
       });
     }
-    return res.status(404).json({
-      message: 'Error while trying to login or register user',
+    return res.status(500).json({
+      message: 'Ошибка при попытке входа или регистрации пользователя',
     });
   }
 };
@@ -339,5 +339,43 @@ export const getAllUsers = async (req, res) => {
     res.status(500).json({
       message: 'Произошла ошибка при получении списка пользователей',
     });
+  }
+};
+
+export const followUser = async (req, res) => {
+  try {
+    const { userId } = req.params; // ID пользователя, на которого подписываются
+    const followerId = req.userId; // ID пользователя, который подписывается (из токена)
+    const updatedUser = await userService.followUser(userId, followerId);
+    res.json({ success: true, user: updatedUser });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка при подписке на пользователя', error: err.message });
+  }
+};
+
+// Отписаться от пользователя
+export const unfollowUser = async (req, res) => {
+  try {
+    const { userId } = req.params; // ID пользователя, от которого отписываются
+    const followerId = req.userId; // ID пользователя, который отписывается (из токена)
+    const updatedUser = await userService.unfollowUser(userId, followerId);
+    res.json({ success: true, user: updatedUser });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка при отписке от пользователя', error: err.message });
+  }
+};
+
+// Получить список подписчиков
+export const getFollowers = async (req, res) => {
+  try {
+    const { userId } = req.params; // ID пользователя, чьих подписчиков запрашивают
+    const followers = await userService.getFollowers(userId);
+    const followersCount = await userService.getFollowersCount(userId);
+    res.json({ success: true, followers, count: followersCount });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Ошибка при получении подписчиков', error: err.message });
   }
 };

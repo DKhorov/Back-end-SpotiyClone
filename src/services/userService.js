@@ -1,76 +1,115 @@
-import BaseService from './baseService.js';
-import DBFactory from '../config/dbFactory.js';
-import crypto from 'crypto';
+import UserModel from '../models/user.js';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 
-class UserService extends BaseService {
-  constructor() {
-    const userRepository = DBFactory.getRepository('user');
-    super(userRepository);
-    this.userRepository = userRepository;
-  }
-
+class UserService {
   async findByEmail(email) {
-    return await this.userRepository.findByEmail(email);
+    return UserModel.findOne({ email });
   }
+
 
   async findAll() {
-    return await this.userRepository.findAll();
+    return UserModel.find({}, '-passwordHash');
   }
 
-  // Создание токена для сброса пароля
+  async create(userData) {
+    const user = new UserModel(userData);
+    return user.save();
+  }
+
+  async update(id, updateData) {
+    return UserModel.findByIdAndUpdate(id, updateData, { new: true });
+  }
+
   async createPasswordResetToken(email) {
     const user = await this.findByEmail(email);
     if (!user) {
-      return null;
+      throw new Error('User not found');
     }
 
-    // Генерация случайного токена
     const resetToken = crypto.randomBytes(20).toString('hex');
+    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-    // Установка срока действия токена (1 час)
-    const resetExpires = new Date();
-    resetExpires.setHours(resetExpires.getHours() + 1);
+    await user.save();
 
-    // Обновление пользователя с токеном и сроком действия
-    await this.update(user.id, {
-      resetPasswordToken: resetToken,
-      resetPasswordExpires: resetExpires,
-    });
-
-    return {
-      email: user.email,
-      resetToken,
-      fullName: user.fullName,
-    };
+    return resetToken;
   }
 
-  // Проверка токена сброса пароля и обновление пароля
   async resetPassword(token, newPassword) {
-    // Поиск пользователя с указанным токеном и проверка срока действия
-    const user = await this.userRepository.findByResetToken(token);
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
-    if (!user) {
-      return { success: false, message: 'Недействительный токен сброса пароля' };
-    }
-
-    // Проверка срока действия токена
-    if (user.resetPasswordExpires < new Date()) {
-      return { success: false, message: 'Срок действия токена истек' };
-    }
-
-    // Хеширование нового пароля
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(newPassword, salt);
-
-    // Обновление пароля и сброс токена
-    await this.update(user.id, {
-      passwordHash,
-      resetPasswordToken: null,
-      resetPasswordExpires: null,
+    const user = await UserModel.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
     });
 
-    return { success: true, message: 'Пароль успешно обновлен' };
+    if (!user) {
+      throw new Error('Token is invalid or has expired');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    return user;
+  }
+
+  async findById(id) {
+    return UserModel.findById(id);
+  }
+
+  // Подписаться на пользователя
+  async followUser(userId, followerId) {
+    const user = await this.findById(userId); // Пользователь, на которого подписываются
+    const follower = await this.findById(followerId); // Пользователь, который подписывается
+
+    if (!user || !follower) {
+      throw new Error('User not found');
+    }
+
+    // Проверяем, что подписка еще не существует
+    if (!user.followers.includes(followerId)) {
+      user.followers.push(followerId); // Добавляем подписчика
+      follower.following.push(userId); // Добавляем в список подписок
+      await user.save();
+      await follower.save();
+    }
+
+    return user;
+  }
+
+  // Отписаться от пользователя
+  async unfollowUser(userId, followerId) {
+    const user = await this.findById(userId); // Пользователь, от которого отписываются
+    const follower = await this.findById(followerId); // Пользователь, который отписывается
+
+    if (!user || !follower) {
+      throw new Error('User not found');
+    }
+
+    // Удаляем подписчика
+    user.followers = user.followers.filter((id) => id.toString() !== followerId);
+    follower.following = follower.following.filter((id) => id.toString() !== userId);
+    await user.save();
+    await follower.save();
+
+    return user;
+  }
+
+  // Получить список подписчиков
+  async getFollowers(userId) {
+    const user = await UserModel.findById(userId).populate('followers', 'fullName email avatarUrl');
+    return user.followers;
+  }
+
+  // Получить количество подписчиков
+  async getFollowersCount(userId) {
+    const user = await this.findById(userId);
+    return user.followers.length;
   }
 }
 

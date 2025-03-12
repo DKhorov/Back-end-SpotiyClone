@@ -18,17 +18,11 @@ const UserSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'artist', 'admin'],
+      enum: ['user', 'admin'],
       default: 'user',
     },
-    resetPasswordToken: {
-      type: String,
-      default: null,
-    },
-    resetPasswordExpires: {
-      type: Date,
-      default: null,
-    },
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Список подписчиков
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Список подписок
   },
   {
     timestamps: true,
