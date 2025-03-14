@@ -1,4 +1,4 @@
-# 🎵 Back-end-SpotiyClone
+# 🎵 Back-end-SpotifyClone
 
 <div align="center">
   
